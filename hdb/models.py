@@ -15,6 +15,7 @@ class DNSZone(Model):
 	#ACL's
 	#Permissions
 	ttl = IntegerField()
+	rndckey = TextField()
 	#fk email to a user?
 	def __unicode__(self):
 		return self.zonename
@@ -26,7 +27,9 @@ class DHCPScope(Model):
 	Fields are all nullable, as they can come from the global zone
 	"""
 	#One zone should be called "global" and specify no range
-	zonename = TextField(max_length=1024)
+	dnszone = ForeignKey(DNSZone, null=True, blank=True )
+	zonename = TextField(max_length=1024, unique=True)
+	
 	def __unicode__(self):
 		return self.zonename
 
@@ -72,6 +75,7 @@ class DNSRecord(Model):
 		('MX', 'MX'),
 		('TXT', 'TXT'),
 		('HINFO', 'HINFO'),
+		('PTR', 'PTR'),
 
 	)
 	address = ForeignKey(Address)
