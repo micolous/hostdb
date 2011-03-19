@@ -17,6 +17,12 @@ class DNSZone(Model):
 	ttl = IntegerField()
 	rndckey = TextField()
 	#fk email to a user?
+	email = CharField(max_length=255)
+	serial = IntegerField()
+	refresh = IntegerField()
+	retry = IntegerField()
+	expire = IntegerField()
+	minimum = IntegerField()
 	def __unicode__(self):
 		return self.zonename
 
@@ -29,7 +35,7 @@ class DHCPScope(Model):
 	#One zone should be called "global" and specify no range
 	dnszone = ForeignKey(DNSZone, null=True, blank=True )
 	zonename = TextField(max_length=1024, unique=True)
-	
+	subnet = CharField(max_length=18, null=True, blank=True, unique=True)
 	def __unicode__(self):
 		return self.zonename
 
