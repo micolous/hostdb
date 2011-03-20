@@ -11,6 +11,8 @@ class DNSZone(Model):
 	This is a DNS zone, and represents both a view in named.conf
 	But also a zone file that is generated from related addresses
 	"""
+	class Meta:
+		verbose_name = 'DNS Zone'
 	zonename = TextField(max_length=1024, unique=True)
 	#ACL's
 	#Permissions
@@ -32,6 +34,8 @@ class DHCPScope(Model):
 	Global, the rest being segments one node down. These
 	Fields are all nullable, as they can come from the global zone
 	"""
+	class Meta:
+		verbose_name = 'DHCP Scope'
 	#One zone should be called "global" and specify no range
 	dnszone = ForeignKey(DNSZone, null=True, blank=True )
 	zonename = TextField(max_length=1024, unique=True)
@@ -51,6 +55,8 @@ class Host(Model):
 		return self.hostname + '.' + self.zone.zonename
 
 class Address(Model):
+	class Meta:
+		verbose_name_plural = 'Addresses'
 	IPv4 = 4; IPv6 = 6
 	IP_TYPE_CHOICES = (	(IPv4, 'IPv4'), (IPv6, 'IPv6'), )
 	host = ForeignKey(Host, null=True, blank=True)
@@ -69,12 +75,16 @@ class Address(Model):
 		pass	
 
 class DHCPHost(Model):
+	class Meta:
+		verbose_name = 'DHCP Host'
 	address = ForeignKey(Address)
 	#Foreign key to a set of DHCP options .... ?
 	#Only if this is ipv6
 	duid = CharField(max_length=255)
 
 class DNSRecord(Model):
+	class Meta:
+		verbose_name = 'DHCP Record'
 	DNS_TYPE_CHOICES = (
 		('A', 'A'),
 		('AAAA', 'AAAA'),
@@ -101,6 +111,8 @@ class DNSRecord(Model):
 	
 
 class DHCPOption(Model):
+	class Meta:
+		verbose_name = 'DHCP Option'
 	"""
 	This is a list of options that can be applied to DHCP object
 	These should not be things like hardware-ethernet address
@@ -113,6 +125,8 @@ class DHCPOption(Model):
 		return self.name
 
 class DHCPValue(Model):
+	class Meta:
+		verbose_name = 'DHCP Value'
 	scope = ForeignKey(DHCPScope, null=True, blank=True)
 	host = ForeignKey(DHCPHost, null=True, blank=True)
 	option = ForeignKey(DHCPOption)
