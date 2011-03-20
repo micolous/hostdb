@@ -36,6 +36,7 @@ class Command(BaseCommand):
 		if not zonename:
 			zonename = ".".join(path.basename(filename).split(".")[:-1])
 			print "no zone name given, assuming '%s'." % zonename
+		
 		# Check the zone
 		c = ZoneCheck(checkzone='/usr/sbin/named-checkzone')
 		if not c.isValid(zonename, filename):
@@ -70,7 +71,7 @@ class Command(BaseCommand):
 						else:
 							print r + ':' + rtype + ':' + rec[0][0] + ' ' + rec[0][1]
 						#Check if the record exists or not
-						if len(DNSRecord.objects.filter(type=rtype,record=rec,fqdn=r)) is 0:
+						if len(DNSRecord.objects.filter(type=rtype,record=rec,fqdn=r)) == 0:
 							dr = DNSRecord()
 							dr.zone = dnsz
 							dr.type = rtype
@@ -78,20 +79,20 @@ class Command(BaseCommand):
 							dr.record = rec
 							dr.ttl = dnsz.ttl
 							dr.fqdn = r
-							if rtype is 'A' or rtype is 'AAAA':
-								if len(Address.objects.filter(address=rec)) is 0:
+							if rtype in ('A', 'AAAA'):
+								if len(Address.objects.filter(address=rec)) == 0:
 									#Then we need to create it.
 									a = Address()
 									a.host = None
 									a.type = 6
-									if rtype is 'A':
+									if rtype == 'A':
 										a.type = 4
 									a.vlan = 0
 									a.mac = None
 									a.address = rec
 									a.save()
 									dr.address = a
-							if rtype is 'MX' or rtype is 'CNAME' or rtype is 'NS':
+							if rtype in ('MX', 'CNAME', 'NS'):
 								related = DNSRecord.objects.filter(Q(fqdn=r) , Q(type='A') | Q(type='AAAA'))
 								if len(related) is not 0:
 									for x in related:
