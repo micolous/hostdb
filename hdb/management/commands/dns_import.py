@@ -27,6 +27,17 @@ class Command(BaseCommand):
 			metavar = 'ZONE',
 			default = None,
 			help='specify the zone name this zone file belongs to. If ommitted, defaults to name of file.')
+		make_option('-k', '--keyfile',
+			dest='keyfile',
+			metavar = 'KEY',
+			default = '/etc/named/rndc.key',
+			help='specify the keyfile where your RNDC key is stored on the DNS server.')
+		make_option('-c', '--checkzone',
+			dest='checkzone',
+			metavar = 'CHECK',
+			default = '/usr/sbin/named-checkzone',
+			help='specify the path to the ISC-BIND named-checkzone binary')
+	
 		)
 
 	def handle(self, filename, zonename, *args, **options):
@@ -34,10 +45,10 @@ class Command(BaseCommand):
 			print "Must supply valid filename"
 			exit(-1)
 		if not zonename:
-			zonename = ".".join(path.basename(filename).split(".")[:-1])
-			print "no zone name given, assuming '%s'." % zonename
+			print "Must supply valid zonename"
+			exit(-1)
 		# Check the zone
-		c = ZoneCheck(checkzone='/usr/sbin/named-checkzone')
+		c = ZoneCheck(checkzone=checkzone)
 		if not c.isValid(zonename, filename):
 			print "Invalid zone"
 			exit(-1)
@@ -48,7 +59,7 @@ class Command(BaseCommand):
 			dnsz = DNSZone()
 			dnsz.zonename = zonename
 			dnsz.ttl = z.root.soa.minttl
-			dnsz.rndckey = '/etc/named/rndc.key'
+			dnsz.rndckey = keyfile
 			#fk email to a user?
 			dnsz.email = 'william.e.brown@adelaide.edu.au'
 			dnsz.serial = z.root.soa.serial
@@ -78,8 +89,8 @@ class Command(BaseCommand):
 							dr.record = rec
 							dr.ttl = dnsz.ttl
 							dr.fqdn = r
-							if rtype is 'A' or rtype is 'AAAA':
-								if len(Address.objects.filter(address=rec)) is 0:
+							if rtype == 'A' or rtype == 'AAAA':
+								if len(Address.objects.filter(address=rec)) == 0:
 									#Then we need to create it.
 									a = Address()
 									a.host = None
@@ -89,11 +100,13 @@ class Command(BaseCommand):
 									a.vlan = 0
 									a.mac = None
 									a.address = rec
-									a.save()
-									dr.address = a
-							if rtype is 'MX' or rtype is 'CNAME' or rtype is 'NS':
+								else:
+								
+								a.save()
+								dr.address = a
+							if rtype == 'MX' or rtype == 'CNAME' or rtype == 'NS' or rtype == 'PTR' or rtype == 'TXT':
 								related = DNSRecord.objects.filter(Q(fqdn=r) , Q(type='A') | Q(type='AAAA'))
-								if len(related) is not 0:
+								if len(related) == not 0:
 									for x in related:
 										dr.dnsrecord.add(x)
 							dr.save()
