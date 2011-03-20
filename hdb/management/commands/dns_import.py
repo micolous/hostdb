@@ -91,20 +91,20 @@ class Command(BaseCommand):
 							dr.ttl = dnsz.ttl
 							dr.fqdn = r
 							if rtype in ('A', 'AAAA'):
-								if len(Address.objects.filter(address=rec)) == 0:
-									#Then we need to create it.
-									a = Address()
-									a.host = None
-									a.type = 6
-									if rtype == 'A':
-										a.type = 4
-									a.vlan = 0
-									a.mac = None
-									a.address = rec
-								else:
-									a.save()
-									dr.address = a
-							if rtype in ('MX', 'CNAME', 'NS'):
+						       try:
+							        a = Address.objects.get(address=rec)
+							        dr.address = a
+						       except DoesNotExist:
+							        a = Address()
+							        a.host = None
+							        a.type = 6
+							        if rtype == 'A':
+							        	a.type = 4
+							        a.vlan = 0
+							        a.mac = None
+							        a.address = rec
+							        a.save()
+							if rtype in ('MX', 'CNAME', 'NS', 'PTR', 'TXT'):
 								related = DNSRecord.objects.filter(Q(fqdn=r) , Q(type='A') | Q(type='AAAA'))
 								if len(related) == 0:
 									for x in related:
