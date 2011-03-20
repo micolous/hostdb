@@ -57,14 +57,16 @@ class Address(Model):
 	type = IntegerField(choices=IP_TYPE_CHOICES)
 	vlan = IntegerField()
 	mac = CharField(max_length=17, null=True)
-	address = CharField(max_length=39)
+	address = CharField(max_length=39, unique=True)
 	#validate wether it is ipv4 or ipv6
+	def __unicode__(self):
+		return self.address 
 	def clean(self):
-		try:
-			IP(address)
-		except:
-			raise ValidationError('Invalid IP address')
-		
+		#try:
+		#	IP(address)
+		#except:
+		#	raise ValidationError('Invalid IP address')	
+		pass	
 
 class DHCPHost(Model):
 	address = ForeignKey(Address)
@@ -82,13 +84,21 @@ class DNSRecord(Model):
 		('TXT', 'TXT'),
 		('HINFO', 'HINFO'),
 		('PTR', 'PTR'),
+		('SRV', 'SRV')
 
 	)
-	address = ForeignKey(Address)
+	address = ForeignKey(Address, null=True, blank=True)
 	zone = ForeignKey(DNSZone)
-	dnsrecord = ForeignKey("self", null=True, related_name='child_records')
+	dnsrecord = ManyToManyField("self", null=True, blank=True)
+	fqdn = CharField(max_length=255, null=True, blank=True)
 	type = CharField(max_length=5, choices=DNS_TYPE_CHOICES)
 	record = TextField(max_length=1024) #This shouldn't be edited? should it be generated?
+	ttl = IntegerField(blank=True, null=True)
+	def __unicode__(self):
+		return self.type + ' : ' + self.record
+	def clean(self):
+		pass
+	
 
 class DHCPOption(Model):
 	"""

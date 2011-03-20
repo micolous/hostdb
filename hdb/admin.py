@@ -19,7 +19,7 @@ class HostAdmin(admin.ModelAdmin):
 admin.site.register(Host, HostAdmin)
 
 class AddressAdmin(admin.ModelAdmin):
-	list_display = ['host', 'type', 'address', 'vlan', 'mac']
+	list_display = ['type', 'address', 'vlan', 'mac']
 	list_filter = ['type', 'vlan']
 	search_fields = ['host', 'address', 'mac']
 	list_editable = ['address', 'vlan']
@@ -32,7 +32,7 @@ class DHCPHostAdmin(admin.ModelAdmin):
 admin.site.register(DHCPHost, DHCPHostAdmin)
 
 class DNSRecordAdmin(admin.ModelAdmin):
-	list_display = ['address', 'zone', 'type', 'record']
+	list_display = ['fqdn', 'type', 'record', 'address','zone']
 
 admin.site.register(DNSRecord, DNSRecordAdmin)
 
