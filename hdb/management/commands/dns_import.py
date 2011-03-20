@@ -20,7 +20,7 @@ class Command(BaseCommand):
 		make_option('-f', '--file',
 			dest='filename',
 			metavar = 'FILE',
-			default=None,
+			default = None,
 			help='dns zone file to import'),
 		make_option('-z', '--zonename',
 			dest='zonename',
@@ -29,9 +29,10 @@ class Command(BaseCommand):
 			help='specify the zone name this zone file belongs to. If ommitted, defaults to name of file.')
 		)
 
-	def handle(self, filename=None, zonename=None, **options):
+	def handle(self, filename, zonename, *args, **options):
 		if not filename:
 			print "Must supply valid filename"
+			exit(-1)
 		if not zonename:
 			zonename = ".".join(path.basename(filename).split(".")[:-1])
 			print "no zone name given, assuming '%s'." % zonename
