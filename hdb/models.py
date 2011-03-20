@@ -108,7 +108,7 @@ class DHCPOption(Model):
 	Things like router, gateway, bootfile .... 
 	"""
 	name = CharField(max_length=255)
-	code = CharField(max_length=255, primary_key=True)
+	code = CharField(max_length=255, unique=True)
 	def __unicode__(self):
 		return self.name
 

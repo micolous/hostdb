@@ -8,37 +8,29 @@ class Migration(SchemaMigration):
 
     def forwards(self, orm):
         
-        # Adding model 'DHCPOptions'
-        db.create_table('hdb_dhcpoptions', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(max_length=255)),
-            ('code', self.gf('django.db.models.fields.IntegerField')()),
-            ('value', self.gf('django.db.models.fields.TextField')()),
-        ))
-        db.send_create_signal('hdb', ['DHCPOptions'])
-
         # Adding model 'DNSZone'
         db.create_table('hdb_dnszone', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('zonename', self.gf('django.db.models.fields.TextField')(max_length=1024)),
+            ('zonename', self.gf('django.db.models.fields.TextField')(unique=True, max_length=1024)),
             ('ttl', self.gf('django.db.models.fields.IntegerField')()),
+            ('rndckey', self.gf('django.db.models.fields.TextField')()),
+            ('email', self.gf('django.db.models.fields.CharField')(max_length=255)),
+            ('serial', self.gf('django.db.models.fields.IntegerField')()),
+            ('refresh', self.gf('django.db.models.fields.IntegerField')()),
+            ('retry', self.gf('django.db.models.fields.IntegerField')()),
+            ('expire', self.gf('django.db.models.fields.IntegerField')()),
+            ('minimum', self.gf('django.db.models.fields.IntegerField')()),
         ))
         db.send_create_signal('hdb', ['DNSZone'])
 
         # Adding model 'DHCPScope'
         db.create_table('hdb_dhcpscope', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('zonename', self.gf('django.db.models.fields.TextField')(max_length=1024)),
+            ('dnszone', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['hdb.DNSZone'], null=True, blank=True)),
+            ('zonename', self.gf('django.db.models.fields.TextField')(unique=True, max_length=1024)),
+            ('subnet', self.gf('django.db.models.fields.CharField')(max_length=18, unique=True, null=True, blank=True)),
         ))
         db.send_create_signal('hdb', ['DHCPScope'])
-
-        # Adding M2M table for field options on 'DHCPScope'
-        db.create_table('hdb_dhcpscope_options', (
-            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
-            ('dhcpscope', models.ForeignKey(orm['hdb.dhcpscope'], null=False)),
-            ('dhcpoptions', models.ForeignKey(orm['hdb.dhcpoptions'], null=False))
-        ))
-        db.create_unique('hdb_dhcpscope_options', ['dhcpscope_id', 'dhcpoptions_id'])
 
         # Adding model 'Host'
         db.create_table('hdb_host', (
@@ -56,55 +48,68 @@ class Migration(SchemaMigration):
         # Adding model 'Address'
         db.create_table('hdb_address', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('host', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['hdb.Host'], null=True)),
+            ('host', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['hdb.Host'], null=True, blank=True)),
             ('type', self.gf('django.db.models.fields.IntegerField')()),
             ('vlan', self.gf('django.db.models.fields.IntegerField')()),
             ('mac', self.gf('django.db.models.fields.CharField')(max_length=17, null=True)),
-            ('address', self.gf('django.db.models.fields.CharField')(max_length=39)),
+            ('address', self.gf('django.db.models.fields.CharField')(unique=True, max_length=39)),
         ))
         db.send_create_signal('hdb', ['Address'])
 
-        # Adding model 'DHCPhost'
+        # Adding model 'DHCPHost'
         db.create_table('hdb_dhcphost', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('address', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['hdb.Address'])),
             ('duid', self.gf('django.db.models.fields.CharField')(max_length=255)),
         ))
-        db.send_create_signal('hdb', ['DHCPhost'])
-
-        # Adding M2M table for field options on 'DHCPhost'
-        db.create_table('hdb_dhcphost_options', (
-            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
-            ('dhcphost', models.ForeignKey(orm['hdb.dhcphost'], null=False)),
-            ('dhcpoptions', models.ForeignKey(orm['hdb.dhcpoptions'], null=False))
-        ))
-        db.create_unique('hdb_dhcphost_options', ['dhcphost_id', 'dhcpoptions_id'])
+        db.send_create_signal('hdb', ['DHCPHost'])
 
         # Adding model 'DNSRecord'
         db.create_table('hdb_dnsrecord', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('address', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['hdb.Address'])),
+            ('address', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['hdb.Address'], null=True, blank=True)),
             ('zone', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['hdb.DNSZone'])),
-            ('dnsrecord', self.gf('django.db.models.fields.related.ForeignKey')(related_name='child_records', null=True, to=orm['hdb.DNSRecord'])),
+            ('fqdn', self.gf('django.db.models.fields.CharField')(max_length=255, null=True, blank=True)),
             ('type', self.gf('django.db.models.fields.CharField')(max_length=5)),
             ('record', self.gf('django.db.models.fields.TextField')(max_length=1024)),
+            ('ttl', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
         ))
         db.send_create_signal('hdb', ['DNSRecord'])
+
+        # Adding M2M table for field dnsrecord on 'DNSRecord'
+        db.create_table('hdb_dnsrecord_dnsrecord', (
+            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
+            ('from_dnsrecord', models.ForeignKey(orm['hdb.dnsrecord'], null=False)),
+            ('to_dnsrecord', models.ForeignKey(orm['hdb.dnsrecord'], null=False))
+        ))
+        db.create_unique('hdb_dnsrecord_dnsrecord', ['from_dnsrecord_id', 'to_dnsrecord_id'])
+
+        # Adding model 'DHCPOption'
+        db.create_table('hdb_dhcpoption', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('name', self.gf('django.db.models.fields.CharField')(max_length=255)),
+            ('code', self.gf('django.db.models.fields.CharField')(unique=True, max_length=255)),
+        ))
+        db.send_create_signal('hdb', ['DHCPOption'])
+
+        # Adding model 'DHCPValue'
+        db.create_table('hdb_dhcpvalue', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('scope', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['hdb.DHCPScope'], null=True, blank=True)),
+            ('host', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['hdb.DHCPHost'], null=True, blank=True)),
+            ('option', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['hdb.DHCPOption'])),
+            ('value', self.gf('django.db.models.fields.CharField')(max_length=255, null=True, blank=True)),
+        ))
+        db.send_create_signal('hdb', ['DHCPValue'])
 
 
     def backwards(self, orm):
         
-        # Deleting model 'DHCPOptions'
-        db.delete_table('hdb_dhcpoptions')
-
         # Deleting model 'DNSZone'
         db.delete_table('hdb_dnszone')
 
         # Deleting model 'DHCPScope'
         db.delete_table('hdb_dhcpscope')
-
-        # Removing M2M table for field options on 'DHCPScope'
-        db.delete_table('hdb_dhcpscope_options')
 
         # Deleting model 'Host'
         db.delete_table('hdb_host')
@@ -112,14 +117,20 @@ class Migration(SchemaMigration):
         # Deleting model 'Address'
         db.delete_table('hdb_address')
 
-        # Deleting model 'DHCPhost'
+        # Deleting model 'DHCPHost'
         db.delete_table('hdb_dhcphost')
-
-        # Removing M2M table for field options on 'DHCPhost'
-        db.delete_table('hdb_dhcphost_options')
 
         # Deleting model 'DNSRecord'
         db.delete_table('hdb_dnsrecord')
+
+        # Removing M2M table for field dnsrecord on 'DNSRecord'
+        db.delete_table('hdb_dnsrecord_dnsrecord')
+
+        # Deleting model 'DHCPOption'
+        db.delete_table('hdb_dhcpoption')
+
+        # Deleting model 'DHCPValue'
+        db.delete_table('hdb_dhcpvalue')
 
 
     models = {
@@ -161,47 +172,63 @@ class Migration(SchemaMigration):
         },
         'hdb.address': {
             'Meta': {'object_name': 'Address'},
-            'address': ('django.db.models.fields.CharField', [], {'max_length': '39'}),
-            'host': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['hdb.Host']", 'null': 'True'}),
+            'address': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '39'}),
+            'host': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['hdb.Host']", 'null': 'True', 'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'mac': ('django.db.models.fields.CharField', [], {'max_length': '17', 'null': 'True'}),
             'type': ('django.db.models.fields.IntegerField', [], {}),
             'vlan': ('django.db.models.fields.IntegerField', [], {})
         },
         'hdb.dhcphost': {
-            'Meta': {'object_name': 'DHCPhost'},
+            'Meta': {'object_name': 'DHCPHost'},
             'address': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['hdb.Address']"}),
             'duid': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'options': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['hdb.DHCPOptions']", 'symmetrical': 'False'})
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'})
         },
-        'hdb.dhcpoptions': {
-            'Meta': {'object_name': 'DHCPOptions'},
-            'code': ('django.db.models.fields.IntegerField', [], {}),
+        'hdb.dhcpoption': {
+            'Meta': {'object_name': 'DHCPOption'},
+            'code': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '255'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'value': ('django.db.models.fields.TextField', [], {})
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'})
         },
         'hdb.dhcpscope': {
             'Meta': {'object_name': 'DHCPScope'},
+            'dnszone': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['hdb.DNSZone']", 'null': 'True', 'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'options': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['hdb.DHCPOptions']", 'symmetrical': 'False'}),
-            'zonename': ('django.db.models.fields.TextField', [], {'max_length': '1024'})
+            'subnet': ('django.db.models.fields.CharField', [], {'max_length': '18', 'unique': 'True', 'null': 'True', 'blank': 'True'}),
+            'zonename': ('django.db.models.fields.TextField', [], {'unique': 'True', 'max_length': '1024'})
+        },
+        'hdb.dhcpvalue': {
+            'Meta': {'object_name': 'DHCPValue'},
+            'host': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['hdb.DHCPHost']", 'null': 'True', 'blank': 'True'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'option': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['hdb.DHCPOption']"}),
+            'scope': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['hdb.DHCPScope']", 'null': 'True', 'blank': 'True'}),
+            'value': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'})
         },
         'hdb.dnsrecord': {
             'Meta': {'object_name': 'DNSRecord'},
-            'address': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['hdb.Address']"}),
-            'dnsrecord': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'child_records'", 'null': 'True', 'to': "orm['hdb.DNSRecord']"}),
+            'address': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['hdb.Address']", 'null': 'True', 'blank': 'True'}),
+            'dnsrecord': ('django.db.models.fields.related.ManyToManyField', [], {'blank': 'True', 'related_name': "'dnsrecord_rel_+'", 'null': 'True', 'to': "orm['hdb.DNSRecord']"}),
+            'fqdn': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'record': ('django.db.models.fields.TextField', [], {'max_length': '1024'}),
+            'ttl': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'type': ('django.db.models.fields.CharField', [], {'max_length': '5'}),
             'zone': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['hdb.DNSZone']"})
         },
         'hdb.dnszone': {
             'Meta': {'object_name': 'DNSZone'},
+            'email': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
+            'expire': ('django.db.models.fields.IntegerField', [], {}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'minimum': ('django.db.models.fields.IntegerField', [], {}),
+            'refresh': ('django.db.models.fields.IntegerField', [], {}),
+            'retry': ('django.db.models.fields.IntegerField', [], {}),
+            'rndckey': ('django.db.models.fields.TextField', [], {}),
+            'serial': ('django.db.models.fields.IntegerField', [], {}),
             'ttl': ('django.db.models.fields.IntegerField', [], {}),
-            'zonename': ('django.db.models.fields.TextField', [], {'max_length': '1024'})
+            'zonename': ('django.db.models.fields.TextField', [], {'unique': 'True', 'max_length': '1024'})
         },
         'hdb.host': {
             'Meta': {'object_name': 'Host'},
