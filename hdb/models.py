@@ -112,17 +112,23 @@ class DNSRecord(Model):
 	)
 	address = ForeignKey(Address, null=True, blank=True)
 	zone = ForeignKey(DNSZone)
-	dnsrecord = ManyToManyField("self", null=True, blank=True)
+	dnsrecord = ManyToManyField("self", related_name="dnschildren", null=True, blank=True)
 	fqdn = CharField(max_length=255, null=True, blank=True)
 	type = CharField(max_length=5, choices=DNS_TYPE_CHOICES)
 	record = TextField(max_length=1024) #This shouldn't be edited? should it be generated?
 	ttl = IntegerField(blank=True, null=True)
+	active = BooleanField(default = False)
 	def __unicode__(self):
-		return  self.fqdn + ' : ' +  self.type + ' : ' + self.record
+		return u'%s : %s : %s' % (self.fqdn , self.type , self.record)
 	def clean(self):
 		if self.type != 'A' and self.type != 'AAAA':
 			self.address = None
 		#need to check for records with a _ in them .... 
+	def is_active(self):
+		for rec in self.dnsrecord.all():
+			if rec.active==False: return False
+		return self.active
+	is_active.boolean = True
 	#NOTE fqdn = full name of record 
 	# NOTE record = data. 
 

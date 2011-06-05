@@ -79,10 +79,6 @@ class Command(BaseCommand):
 			for r in z.names:
 				try:
 					for rec in z.names[r].records(rtype).items:
-						if rtype != 'MX':
-							print '%s : %s : %s' %( r , rtype , rec)
-						else:
-							print '%s : %s : %s %s ' % ( r , rtype , rec[0] , rec[1])
 						#Check if the record exists or not
 						if len(DNSRecord.objects.filter(type=rtype,record=rec,fqdn=r)) == 0:
 							dr = DNSRecord()
@@ -91,6 +87,7 @@ class Command(BaseCommand):
 							if rtype == 'MX':
 								rec = '%s %s' % rec
 							dr.record = rec
+							dr.active= True
 							dr.ttl = dnsz.ttl
 							dr.fqdn = r
 							if rtype in ('A', 'AAAA'):
@@ -108,6 +105,7 @@ class Command(BaseCommand):
 									a.save()
 								dr.address = a
 							dr.save()
+							print dr
 							if rtype in ('MX', 'CNAME', 'NS', 'PTR', 'TXT', 'SRV'):
 								test = rec.split(' ')[-1]
 								#We should also split the rec if possible - last field is our related name in SRV / MX

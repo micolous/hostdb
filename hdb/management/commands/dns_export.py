@@ -87,25 +87,28 @@ class Command(BaseCommand):
 			\n""" % values ).replace("\n\t\t\t", "\n")
 			f.write(SOA)
 			for nsserver in dnsz.dnsrecord_set.filter( type="NS"):
-				f.write('	NS %s \n' %( nsserver.record) )
-			for arecord in dnsz.dnsrecord_set.filter( fqdn=zonename, type__in=( 'A', 'AAAA' ) ):
-				f.write('	%s %s \n' % (arecord.type, arecord.address) )
+				if nsserver.is_active():
+					f.write('	NS %s \n' %( nsserver.record) )
+			for arecord in dnsz.dnsrecord_set.filter( fqdn=zonename, type__in=( 'A', 'AAAA' )):
+				if arecord.is_active():
+					f.write('	%s %s \n' % (arecord.type, arecord.address) )
 			#Now we write the origin out ... 
 			f.write("$ORIGIN %s\n" % zonename )
 			lorigin = zonename
 			origin = zonename
 			for record in dnsz.dnsrecord_set.filter( ~Q(fqdn__exact = zonename) ).order_by('type') :
-				#print record.fqdn + ':' + record.record + ':' + record.type
-				pqdn = record.fqdn.replace('.' + zonename, '')
-				lorigin = origin
-				if '.' in pqdn:
-					origin = pqdn.split('.',1)[1] + '.' + zonename
-				else: 
-					origin = zonename
-					#f.write('$ORIGIN %s\n' % zonename)
-				if lorigin != origin:
-					f.write('$ORIGIN %s\n' % (origin))
-				f.write( "%-20s %-5s %s\n" %( record.fqdn.replace('.'+ origin,'' ) , record.type, record.record )  )
+				if record.is_active():
+					#print record.fqdn + ':' + record.record + ':' + record.type
+					pqdn = record.fqdn.replace('.' + zonename, '')
+					lorigin = origin
+					if '.' in pqdn:
+						origin = pqdn.split('.',1)[1] + '.' + zonename
+					else: 
+						origin = zonename
+						#f.write('$ORIGIN %s\n' % zonename)
+					if lorigin != origin:
+						f.write('$ORIGIN %s\n' % (origin))
+					f.write( "%-20s %-5s %s\n" %( record.fqdn.replace('.'+ origin,'' ) , record.type, record.record )  )
 		#z = easyzone.zone_from_file(zonename, filename)
 		#z.save(autoserial=False)
 		

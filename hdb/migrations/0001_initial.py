@@ -80,6 +80,7 @@ class Migration(SchemaMigration):
             ('type', self.gf('django.db.models.fields.CharField')(max_length=5)),
             ('record', self.gf('django.db.models.fields.TextField')(max_length=1024)),
             ('ttl', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
+            ('active', self.gf('django.db.models.fields.BooleanField')(default=False)),
         ))
         db.send_create_signal('hdb', ['DNSRecord'])
 
@@ -218,6 +219,7 @@ class Migration(SchemaMigration):
         },
         'hdb.dnsrecord': {
             'Meta': {'object_name': 'DNSRecord'},
+            'active': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'address': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['hdb.Address']", 'null': 'True', 'blank': 'True'}),
             'dnsrecord': ('django.db.models.fields.related.ManyToManyField', [], {'blank': 'True', 'related_name': "'dnsrecord_rel_+'", 'null': 'True', 'to': "orm['hdb.DNSRecord']"}),
             'fqdn': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'}),
