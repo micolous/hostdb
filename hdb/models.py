@@ -87,7 +87,7 @@ class DHCPHost(Model):
 
 class DNSRecord(Model):
 	class Meta:
-		verbose_name = 'DHCP Record'
+		verbose_name = 'DNS Record'
 	DNS_TYPE_CHOICES = (
 		('A', 'A'),
 		('AAAA', 'AAAA'),
