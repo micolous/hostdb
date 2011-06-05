@@ -34,7 +34,7 @@ class DHCPHostAdmin(admin.ModelAdmin):
 admin.site.register(DHCPHost, DHCPHostAdmin)
 
 class DNSRecordAdmin(admin.ModelAdmin):
-	list_display = ['fqdn', 'type', 'record', 'address','active','zone']
+	list_display = ['fqdn', 'type', 'record', 'address','active', 'is_active','zone']
 	list_filter = [ 'type', 'zone__zonename' ]
 	filter_horizontal = [ 'dnsrecord' ]
 	list_editable = ['active'] 
