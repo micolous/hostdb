@@ -27,6 +27,9 @@ class DNSZone(Model):
 	minimum = IntegerField()
 	def __unicode__(self):
 		return self.zonename
+	def clean(self):
+		if self.zonename[-1] != '.':
+			self.zonename += '.'
 
 class DHCPScope(Model):
 	"""
@@ -108,7 +111,8 @@ class DNSRecord(Model):
 		return self.type + ' : ' + self.record
 	def clean(self):
 		pass
-	
+	#NOTE fqdn = full name of record 
+	# NOTE record = data. 
 
 class DHCPOption(Model):
 	class Meta:
