@@ -35,8 +35,7 @@ class Migration(SchemaMigration):
         # Adding model 'Host'
         db.create_table('hdb_host', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('zone', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['hdb.DNSZone'])),
-            ('owner', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['auth.User'])),
+            ('owner', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['auth.User'], null=True)),
             ('hostname', self.gf('django.db.models.fields.CharField')(max_length=255)),
             ('os', self.gf('django.db.models.fields.CharField')(max_length=200)),
             ('description', self.gf('django.db.models.fields.TextField')()),
@@ -45,13 +44,21 @@ class Migration(SchemaMigration):
         ))
         db.send_create_signal('hdb', ['Host'])
 
+        # Adding M2M table for field zone on 'Host'
+        db.create_table('hdb_host_zone', (
+            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
+            ('host', models.ForeignKey(orm['hdb.host'], null=False)),
+            ('dnszone', models.ForeignKey(orm['hdb.dnszone'], null=False))
+        ))
+        db.create_unique('hdb_host_zone', ['host_id', 'dnszone_id'])
+
         # Adding model 'Address'
         db.create_table('hdb_address', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('host', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['hdb.Host'], null=True, blank=True)),
             ('type', self.gf('django.db.models.fields.IntegerField')()),
             ('vlan', self.gf('django.db.models.fields.IntegerField')()),
-            ('mac', self.gf('django.db.models.fields.CharField')(max_length=17, null=True)),
+            ('hwid', self.gf('django.db.models.fields.CharField')(max_length=17, null=True)),
             ('address', self.gf('django.db.models.fields.CharField')(unique=True, max_length=39)),
         ))
         db.send_create_signal('hdb', ['Address'])
@@ -114,6 +121,9 @@ class Migration(SchemaMigration):
         # Deleting model 'Host'
         db.delete_table('hdb_host')
 
+        # Removing M2M table for field zone on 'Host'
+        db.delete_table('hdb_host_zone')
+
         # Deleting model 'Address'
         db.delete_table('hdb_address')
 
@@ -174,8 +184,8 @@ class Migration(SchemaMigration):
             'Meta': {'object_name': 'Address'},
             'address': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '39'}),
             'host': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['hdb.Host']", 'null': 'True', 'blank': 'True'}),
+            'hwid': ('django.db.models.fields.CharField', [], {'max_length': '17', 'null': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'mac': ('django.db.models.fields.CharField', [], {'max_length': '17', 'null': 'True'}),
             'type': ('django.db.models.fields.IntegerField', [], {}),
             'vlan': ('django.db.models.fields.IntegerField', [], {})
         },
@@ -238,8 +248,8 @@ class Migration(SchemaMigration):
             'location': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'notes': ('django.db.models.fields.TextField', [], {}),
             'os': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
-            'owner': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['auth.User']"}),
-            'zone': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['hdb.DNSZone']"})
+            'owner': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['auth.User']", 'null': 'True'}),
+            'zone': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['hdb.DNSZone']", 'null': 'True', 'blank': 'True'})
         }
     }
 

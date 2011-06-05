@@ -47,15 +47,20 @@ class DHCPScope(Model):
 		return self.zonename
 
 class Host(Model):
-	zone = ForeignKey(DNSZone)
-	owner = ForeignKey(User)
+	zone = ManyToManyField( DNSZone, blank=True , null = True)
+	owner = ForeignKey(User, null=True, on_delete=SET_NULL)
 	hostname = CharField(max_length=255)
 	os = CharField(max_length=200)
 	description = TextField()
 	notes = TextField()
 	location = CharField(max_length=255)
 	def __unicode__(self):
-		return self.hostname + '.' + self.zone.zonename
+		zones=self.zone.all()
+		if len(zones)==1:
+			return u"%s.%s" % (self.hostname, zones[0].zonename)
+		elif len(zones)>1:
+			return u"%s.{%s}" % (self.hostname, u"".join(z.zonename for z in zones))
+		return self.hostname
 
 class Address(Model):
 	class Meta:
@@ -65,7 +70,7 @@ class Address(Model):
 	host = ForeignKey(Host, null=True, blank=True)
 	type = IntegerField(choices=IP_TYPE_CHOICES)
 	vlan = IntegerField()
-	mac = CharField(max_length=17, null=True)
+	hwid = CharField(max_length=17, null=True)
 	address = CharField(max_length=39, unique=True)
 	#validate wether it is ipv4 or ipv6
 	def __unicode__(self):
@@ -75,7 +80,12 @@ class Address(Model):
 		#	IP(address)
 		#except:
 		#	raise ValidationError('Invalid IP address')	
-		pass	
+		if type == 4:
+			#validate hwid as a mac address
+			pass
+		else:
+			#validate duid
+			pass
 
 class DHCPHost(Model):
 	class Meta:
@@ -108,9 +118,11 @@ class DNSRecord(Model):
 	record = TextField(max_length=1024) #This shouldn't be edited? should it be generated?
 	ttl = IntegerField(blank=True, null=True)
 	def __unicode__(self):
-		return self.type + ' : ' + self.record
+		return  self.fqdn + ' : ' +  self.type + ' : ' + self.record
 	def clean(self):
-		pass
+		if self.type != 'A' and self.type != 'AAAA':
+			self.address = None
+		#need to check for records with a _ in them .... 
 	#NOTE fqdn = full name of record 
 	# NOTE record = data. 
 

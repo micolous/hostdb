@@ -7,6 +7,7 @@ class DNSZoneAdmin(admin.ModelAdmin):
 
 admin.site.register(DNSZone, DNSZoneAdmin)
 
+
 class DHCPScopeAdmin(admin.ModelAdmin):
 	search_fields = ['zonename']
 
@@ -15,13 +16,14 @@ admin.site.register(DHCPScope, DHCPScopeAdmin)
 class HostAdmin(admin.ModelAdmin):
 	search_fields = ['zone__zonename', 'hostname', 'User__name', 'location']
 	list_display = ['hostname', 'os', 'owner']
+	filter_horizontal = [ 'zone' ]
 
 admin.site.register(Host, HostAdmin)
 
 class AddressAdmin(admin.ModelAdmin):
-	list_display = ['type', 'address', 'vlan', 'mac']
+	list_display = ['type', 'host', 'address', 'vlan', 'hwid']
 	list_filter = ['type', 'vlan']
-	search_fields = ['host', 'address', 'mac']
+	search_fields = ['host__hostname', 'address', 'hwid']
 	list_editable = ['address', 'vlan']
 
 admin.site.register(Address, AddressAdmin)
@@ -33,6 +35,8 @@ admin.site.register(DHCPHost, DHCPHostAdmin)
 
 class DNSRecordAdmin(admin.ModelAdmin):
 	list_display = ['fqdn', 'type', 'record', 'address','zone']
+	list_filter = [ 'type', 'zone__zonename' ]
+	filter_horizontal = [ 'dnsrecord' ]
 
 admin.site.register(DNSRecord, DNSRecordAdmin)
 

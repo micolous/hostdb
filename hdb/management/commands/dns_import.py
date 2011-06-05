@@ -5,7 +5,8 @@ from os import path
 from django.core.management.base import BaseCommand, CommandError
 from optparse import make_option
 from hostdb.hdb.models import *
-
+import traceback
+import sys
 from easyzone import easyzone
 from easyzone.zone_check import ZoneCheck
 #read the user input, to determine the zone name, and file to be read.
@@ -40,14 +41,15 @@ class Command(BaseCommand):
 	
 		)
 
-	def handle(self, filename, zonename, *args, **options):
+	def handle(self, filename, zonename, keyfile, checkzone, *args, **options):
 		if not filename:
 			print "Must supply valid filename"
 			exit(-1)
 		if not zonename:
 			print "Must supply valid zonename"
 			exit(-1)
-		
+		if zonename[-1] != '.':
+			zonename += '.'
 		# Check the zone
 		c = ZoneCheck(checkzone=checkzone)
 		if not c.isValid(zonename, filename):
@@ -70,45 +72,48 @@ class Command(BaseCommand):
 			dnsz.minimum = z.root.soa.minttl
 			dnsz.save()
 		else:
-			dnsz = DNSZone.objects.filter(zonename=zonename)[0]
+			dnsz = DNSZone.objects.get(zonename=zonename)
 		
 		#We want to populate the A and AAAA records first, else we wont have integrity for the other records.
 		for rtype in ('A', 'AAAA', 'MX', 'PTR', 'TXT', 'SRV', 'CNAME', 'NS', 'HINFO'):
 			for r in z.names:
 				try:
 					for rec in z.names[r].records(rtype).items:
-						if rtype is not 'MX':
-							print r + ':' + rtype + ':' + rec
+						if rtype != 'MX':
+							print '%s : %s : %s' %( r , rtype , rec)
 						else:
-							print r + ':' + rtype + ':' + rec[0][0] + ' ' + rec[0][1]
+							print '%s : %s : %s %s ' % ( r , rtype , rec[0] , rec[1])
 						#Check if the record exists or not
 						if len(DNSRecord.objects.filter(type=rtype,record=rec,fqdn=r)) == 0:
 							dr = DNSRecord()
 							dr.zone = dnsz
 							dr.type = rtype
-							#Make this work for MX records
+							if rtype == 'MX':
+								rec = '%s %s' % rec
 							dr.record = rec
 							dr.ttl = dnsz.ttl
 							dr.fqdn = r
 							if rtype in ('A', 'AAAA'):
-						       try:
-							        a = Address.objects.get(address=rec)
-							        dr.address = a
-						       except DoesNotExist:
-							        a = Address()
-							        a.host = None
-							        a.type = 6
-							        if rtype == 'A':
-							        	a.type = 4
-							        a.vlan = 0
-							        a.mac = None
-							        a.address = rec
-							        a.save()
-							if rtype in ('MX', 'CNAME', 'NS', 'PTR', 'TXT'):
-								related = DNSRecord.objects.filter(Q(fqdn=r) , Q(type='A') | Q(type='AAAA'))
-								if len(related) == 0:
-									for x in related:
-										dr.dnsrecord.add(x)
+								try:
+									a = Address.objects.get(address=rec)
+								except Address.DoesNotExist:
+									a = Address()
+									a.host = None
+									a.type = 6
+									if rtype == 'A':
+										a.type = 4
+									a.vlan = 0
+									a.hwid = None
+									a.address = rec
+									a.save()
+								dr.address = a
+							dr.save()
+							if rtype in ('MX', 'CNAME', 'NS', 'PTR', 'TXT', 'SRV'):
+								test = rec.split(' ')[-1]
+								#We should also split the rec if possible - last field is our related name in SRV / MX
+								related = DNSRecord.objects.filter(Q(fqdn=test) , Q(type='A') | Q(type='AAAA'))
+								for x in related:
+									dr.dnsrecord.add(x)
 							dr.save()
 							#Check if this object exists in our model (host, address and type)
 							#If we find a host by this FQDN, tie the address to it. Else skip and add address / record.
@@ -119,4 +124,4 @@ class Command(BaseCommand):
 					pass
 				except TypeError as e:
 					print 'EXCEPTION ON:' + r + ':' + rtype + ' ;;TypeError; ' + e.message
-			
+					print traceback.print_tb(sys.exc_info()[2] )
