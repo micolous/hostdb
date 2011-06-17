@@ -72,8 +72,8 @@ class Command(BaseCommand):
 		write = False
 		for record in dnsz.dnsrecord_set.all():
 			if dnsz.last_exported < record.modified:
-				print 'modified'
-				print record
+				#print 'modified'
+				#print record
 				write = True
 				break
 			else:
