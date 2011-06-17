@@ -76,8 +76,6 @@ class Command(BaseCommand):
 				#print record
 				write = True
 				break
-			else:
-				#print 'not modified'
 		# We write this time out just for record keepings sake
 		dnsz.last_exported = datetime.datetime.now()
 		dnsz.save()
