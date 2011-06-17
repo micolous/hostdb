@@ -96,3 +96,5 @@ INSTALLED_APPS = (
     'hdb',
     #'shell',
 )
+
+from settings_local import *
