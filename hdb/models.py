@@ -127,8 +127,15 @@ class DNSRecord(Model):
 			self.address = None
 		#need to check for records with a _ in them .... 
 	def is_active(self):
-		for rec in self.dnsrecord.all():
-			if rec.active==False: return False
+		# This should only send back that it is not active if ALL its parents are False.
+		parent_active = False
+		recs = self.dnsrecord.all()
+		for rec in recs:
+			if rec.active==True: parent_active = True
+		if not parent_active and len(recs):
+			#none of our parents are active, so we are false
+			return False
+		#At least one of our parents is active, so we return our status
 		return self.active
 	is_active.boolean = True
 	#NOTE fqdn = full name of record 
