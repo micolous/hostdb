@@ -5,7 +5,6 @@ from os import path
 from django.core.management.base import BaseCommand, CommandError
 from django.forms.models import model_to_dict
 from django.db.models import Q
-
 from optparse import make_option
 from hostdb.hdb.models import *
 
@@ -61,15 +60,32 @@ class Command(BaseCommand):
 		for dnsz in dnsz_list:
 			#This could be made to the datestamp
 			#TODO zonename needs to be set here ... 
-			dnsz.serial = datetime.datetime.now().strftime("%Y%m%d%H")
+			#dnsz.serial = datetime.datetime.now().strftime("%Y%m%d%H")
+			dnsz.serial += 1
 			dnsz.save()
 			for nsserver in dnsz.dnsrecord_set.filter(type="NS"):
 				self.exportZone("%s.%s.zone" %(nsserver.record, zonename ) , dnsz, nsserver, zonename)
 		
 	def exportZone(self, filename, dnsz, nsserver, zonename):
-		#Create or edit the file. Put the SOA details in.
+		# TODO: This needs to write to a temp file, check it then if it passes, put it into place.
+		# Check our list of zone entries if anything has been updated since the last writeout .... 
+		write = False
+		for record in dnsz.dnsrecord_set.all():
+			if dnsz.last_exported < record.modified:
+				print 'modified'
+				print record
+				write = True
+				break
+			else:
+				print 'not modified'
+		# We write this time out just for record keepings sake
+		dnsz.last_exported = datetime.datetime.now()
+		dnsz.save()
+		if not write:
+			return
+		# Create or edit the file. Put the SOA details in.
 		# Fill in the template. 
-		#do we need to touch this first
+		# do we need to touch this first
 		with open(filename,'w') as f:
 			values = model_to_dict(dnsz)
 			values ['nsserver'] = nsserver.record

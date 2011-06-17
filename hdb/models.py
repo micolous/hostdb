@@ -25,6 +25,7 @@ class DNSZone(Model):
 	retry = IntegerField()
 	expire = IntegerField()
 	minimum = IntegerField()
+	last_exported = DateTimeField(auto_now_add=True)
 	def __unicode__(self):
 		return self.zonename
 	def clean(self):
@@ -118,6 +119,7 @@ class DNSRecord(Model):
 	record = TextField(max_length=1024) #This shouldn't be edited? should it be generated?
 	ttl = IntegerField(blank=True, null=True)
 	active = BooleanField(default = False)
+	modified = DateTimeField(auto_now=True, auto_now_add=True)
 	def __unicode__(self):
 		return u'%s : %s : %s' % (self.fqdn , self.type , self.record)
 	def clean(self):
