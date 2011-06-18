@@ -1,0 +1,17 @@
+HostDB is aimed to provide a intuative web interface to Host DNS and DHCP managment. It abstracts the need for people to recklessly edit bind9 and isc-dhcp files, and potentially break something.
+
+At this time I have been focused primarily on DNS support. 
+
+There are still some "quirks" of the interface (Record field still shown when not needed on a DNS rec type for example). However the core functionality is mostly there. 
+
+You can:
+
+- Import zones with the './manage.py dns_import' command
+- Edit records from the django admin interface, and manage addresses, and relationships
+- Use two "magic" types (ACNAME and AAAACNAME) To create a CNAME record that only returns A or AAAA records (Thanks to micolous for this)
+- Export zones to a live running bind server with './manage.py dns_export'
+--- NOTE: The export only exports if data has changed, so it won't hammer you on AXFRs
+
+The current design of the export script is that you have a nameserver master, that reloads and manages the zone, and pushes it to slaves. However, the export script can export zone files that will work on all your name servers, allowing you to rsync or scp out your zone files.
+
+
