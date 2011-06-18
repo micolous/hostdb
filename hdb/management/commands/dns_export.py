@@ -94,7 +94,7 @@ class Command(BaseCommand):
 					check = ZoneCheck(checkzone=checkzone)
 					res = check.isValid(dnsz.zonename, filename_tmp  )
 					if verbosity > '1':
-						print 'result: %s' % res
+						print 'check result: %s' % res
 					if res:
 						#zone is valid, move it into place
 						os.rename(filename_tmp, filename)
@@ -149,17 +149,19 @@ class Command(BaseCommand):
 			)
 			\n""" % values ).replace("\n\t\t\t", "\n")
 			f.write(SOA)
+			if verbosity > '1': print SOA
 			for nsserver in dnsz.dnsrecord_set.filter( type="NS"):
 				if nsserver.is_active():
 					f.write('	NS %s \n' %( nsserver.record) )
 			for arecord in dnsz.dnsrecord_set.filter( fqdn=zonename, type__in=( 'A', 'AAAA' )):
 				if arecord.is_active():
 					f.write('	%s %s \n' % (arecord.type, arecord.address) )
-			#Now we write the origin out ... 
-			f.write("$ORIGIN %s\n" % zonename )
-			lorigin = zonename
-			origin = zonename
-			for record in dnsz.dnsrecord_set.filter( ~Q(fqdn__exact = zonename) ).order_by('type') :
+			#Now we write the origin and TTL out ... 
+			lttl = values['ttl']
+			origin = '.'
+			lorigin = '.'
+			for record in dnsz.dnsrecord_set.filter( ~Q(fqdn__exact = zonename) ).order_by('fqdn','type' ) :
+				if verbosity > '1': print record
 				if record.is_active():
 					#print record.fqdn + ':' + record.record + ':' + record.type
 					pqdn = record.fqdn.replace('.' + zonename, '')
@@ -171,6 +173,10 @@ class Command(BaseCommand):
 						#f.write('$ORIGIN %s\n' % zonename)
 					if lorigin != origin:
 						f.write('$ORIGIN %s\n' % (origin))
+					if lttl != record.ttl:
+						if record.ttl != None:
+							f.write('$TTL %s\n' % record.ttl)
+							lttl = record.ttl
 					f.write( "%-20s %-5s %s\n" %( record.fqdn.replace('.'+ origin,'' ) , record.type, record.record )  )
 		return True
 		
