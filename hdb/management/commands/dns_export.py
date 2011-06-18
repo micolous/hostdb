@@ -21,11 +21,11 @@ class Command(BaseCommand):
 	can_import_settings = True
 	help = "Import dns zone file to database and bring it under hdb control."
 	option_list = BaseCommand.option_list + (
-		make_option('-f', '--file',
-			dest='filename',
-			metavar = 'FILE',
-			default = None,
-			help='dns zone file to export to. If not specified, will default to "zonename.zone" '),
+		#make_option('-f', '--file',
+		#	dest='filename',
+		#	metavar = 'FILE',
+		#	default = None,
+		#	help='dns zone file to export to. If not specified, will default to "zonename.zone" '),
 		make_option('-z', '--zonename',
 			dest='zonename',
 			metavar = 'ZONE',
@@ -41,10 +41,15 @@ class Command(BaseCommand):
 			metavar = 'CHECK',
 			default = '/usr/sbin/named-checkzone',
 			help='specify the path to the ISC-BIND named-checkzone binary'),
+		make_option('-f', '--force',
+			action='store_true',
+			dest='force_write',
+			default=False,
+			help='force writing of zone files even if no updates are needed',),
 		
 		)
 		
-	def handle(self, filename, zonename, dirname, checkzone, *args, **options):
+	def handle(self, zonename, dirname, checkzone, verbosity, force_write, *args, **options):
 		if not zonename and not dirname:
 			print "Must supply valid zonename. If you wish to export all zones, provide a dirname"
 			exit(-1)
@@ -55,13 +60,20 @@ class Command(BaseCommand):
 			dirname = './'
 		if dirname[-1] != '/':
 			dirname += '/'
-		if zonename[-1] != '.':
-			zonename += '.'
+		if (verbosity > '1'):
+			print 'zonename: %s' % zonename
+			print 'dirname: %s' % dirname
+			print 'checkzone: %s' % checkzone
+			print 'force_write: %s' % force_write
 		#We get our list of DNSRecord objects, all if there is no zonename specified
 		if zonename:
+			if zonename[-1] != '.':
+				zonename += '.'
 			dnsz_list = DNSZone.objects.filter(zonename=zonename)
 		else:
 			dnsz_list = dnsz = DNSZone.objects.all()
+		if verbosity > '1':
+			print dnsz_list
 		for dnsz in dnsz_list:
 			#This could be made to the datestamp
 			#TODO zonename needs to be set here ... 
@@ -69,27 +81,37 @@ class Command(BaseCommand):
 			dnsz.serial += 1
 			dnsz.save()
 			for nsserver in dnsz.dnsrecord_set.filter(type="NS"):
-				filename = "%s%s%szone" %(dirname, nsserver.record, zonename )
+				filename = "%s%s%szone" %(dirname, nsserver.record, dnsz.zonename )
 				filename_tmp = filename + '.tmp'
-				exported = self.exportZone(filename_tmp , dnsz, nsserver, zonename)
+				if verbosity > '1':
+					print 'filename: %s' % filename
+					print 'filename_tmp: %s' % filename_tmp
+				exported = self.exportZone(filename_tmp , dnsz, nsserver, dnsz.zonename, force_write, verbosity)
+				if verbosity > '1':
+					print 'exported: %s' % exported
 				#now we need to check the zone
 				if exported:
 					check = ZoneCheck(checkzone=checkzone)
-					res = check.isValid(zonename, filename_tmp  )
+					res = check.isValid(dnsz.zonename, filename_tmp  )
+					if verbosity > '1':
+						print 'result: %s' % res
 					if res:
 						#zone is valid, move it into place
 						os.rename(filename_tmp, filename)
 					else:
-						print 'ERROR: invalid zone %s' % zonename
+						print 'ERROR: invalid zone %s' % dnsz.zonename
 						print 'This is either a broken zone, or bad path to checkzone'
 						print 'Please check the zone at %s' % filename_tmp
 
 		
-	def exportZone(self, filename, dnsz, nsserver, zonename):
+	def exportZone(self, filename, dnsz, nsserver, zonename, write, verbosity):
+		if (verbosity > '1'):
+			print '-> filename: %s' % filename
+			print '-> zonename: %s' % zonename
+			print '-> write: %s' % write
+			print '-> verbosity: %s' % verbosity
 		# TODO: This needs to write to a temp file, check it then if it passes, put it into place.
 		# Check our list of zone entries if anything has been updated since the last writeout .... 
-		debug = False
-		write = False
 		for record in dnsz.dnsrecord_set.all():
 			if dnsz.last_exported < record.modified:
 				#print 'modified'
@@ -99,7 +121,7 @@ class Command(BaseCommand):
 		# We write this time out just for record keepings sake
 		dnsz.last_exported = datetime.datetime.now()
 		dnsz.save()
-		if not write and not debug:
+		if write == False:
 			return False
 		# Create or edit the file. Put the SOA details in.
 		# Fill in the template. 
@@ -146,7 +168,5 @@ class Command(BaseCommand):
 					if lorigin != origin:
 						f.write('$ORIGIN %s\n' % (origin))
 					f.write( "%-20s %-5s %s\n" %( record.fqdn.replace('.'+ origin,'' ) , record.type, record.record )  )
-		#z = easyzone.zone_from_file(zonename, filename)
-		#z.save(autoserial=False)
 		return True
 		
