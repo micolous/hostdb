@@ -104,6 +104,8 @@ class DNSRecord(Model):
 		('AAAA', 'AAAA'),
 		('NS', 'NS'),
 		('CNAME', 'CNAME'),
+		('ACNAME', 'ACNAME'),
+		('AAAACNAME', 'AAAACNAME'),
 		('MX', 'MX'),
 		('TXT', 'TXT'),
 		('HINFO', 'HINFO'),
@@ -115,8 +117,8 @@ class DNSRecord(Model):
 	zone = ForeignKey(DNSZone)
 	dnsrecord = ManyToManyField("self", related_name="dnschildren", null=True, blank=True)
 	fqdn = CharField(max_length=255, null=True, blank=True)
-	type = CharField(max_length=5, choices=DNS_TYPE_CHOICES)
-	record = TextField(max_length=1024) #This shouldn't be edited? should it be generated?
+	type = CharField(max_length=9, choices=DNS_TYPE_CHOICES)
+	record = TextField(max_length=1024, null=True, blank=True) #This shouldn't be edited? should it be generated?
 	ttl = IntegerField(blank=True, null=True)
 	active = BooleanField(default = False)
 	modified = DateTimeField(auto_now=True, auto_now_add=True)

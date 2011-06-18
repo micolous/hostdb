@@ -177,6 +177,11 @@ class Command(BaseCommand):
 						if record.ttl != None:
 							f.write('$TTL %s\n' % record.ttl)
 							lttl = record.ttl
-					f.write( "%-20s %-5s %s\n" %( record.fqdn.replace('.'+ origin,'' ) , record.type, record.record )  )
+					if record.type == 'ACNAME' or record.type == 'AAAACNAME':
+						f.write( "%-20s " % (record.fqdn.replace('.' + origin, '') ) )
+						for parent_rec in record.dnsrecord.filter(type=record.type.replace('CNAME', '') ):
+							f.write ("\t%-10s %s\n" % ( parent_rec.type, parent_rec.record) )
+					else:
+						f.write( "%-20s %-10s %s\n" %( record.fqdn.replace('.'+ origin,'' ) , record.type, record.record )  )
 		return True
 		
