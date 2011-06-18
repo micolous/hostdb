@@ -52,7 +52,9 @@ class Command(BaseCommand):
 		#	print "Must supply valid filename or directory name."
 		#	exit(-1)
 		if not dirname:
-			dirname = '.'
+			dirname = './'
+		if dirname[-1] != '/':
+			dirname += '/'
 		if zonename[-1] != '.':
 			zonename += '.'
 		#We get our list of DNSRecord objects, all if there is no zonename specified
@@ -67,19 +69,20 @@ class Command(BaseCommand):
 			dnsz.serial += 1
 			dnsz.save()
 			for nsserver in dnsz.dnsrecord_set.filter(type="NS"):
-				filename = "%s/%s%s.zone" %(dirname, nsserver.record, zonename )
+				filename = "%s%s%szone" %(dirname, nsserver.record, zonename )
 				filename_tmp = filename + '.tmp'
-				self.exportZone(filename_tmp , dnsz, nsserver, zonename)
+				exported = self.exportZone(filename_tmp , dnsz, nsserver, zonename)
 				#now we need to check the zone
-				check = ZoneCheck(checkzone=checkzone)
-				res = check.isValid(zonename, filename_tmp  )
-				if res:
-					#zone is valid, move it into place
-					os.rename(filename_tmp, filename)
-				else:
-					print 'ERROR: invalid zone %s' % zonename
-					print 'This is either a broken zone, or bad path to checkzone'
-					print 'Please check the zone at %s' % filename_tmp
+				if exported:
+					check = ZoneCheck(checkzone=checkzone)
+					res = check.isValid(zonename, filename_tmp  )
+					if res:
+						#zone is valid, move it into place
+						os.rename(filename_tmp, filename)
+					else:
+						print 'ERROR: invalid zone %s' % zonename
+						print 'This is either a broken zone, or bad path to checkzone'
+						print 'Please check the zone at %s' % filename_tmp
 
 		
 	def exportZone(self, filename, dnsz, nsserver, zonename):
@@ -97,7 +100,7 @@ class Command(BaseCommand):
 		dnsz.last_exported = datetime.datetime.now()
 		dnsz.save()
 		if not write and not debug:
-			return
+			return False
 		# Create or edit the file. Put the SOA details in.
 		# Fill in the template. 
 		# do we need to touch this first
@@ -145,4 +148,5 @@ class Command(BaseCommand):
 					f.write( "%-20s %-5s %s\n" %( record.fqdn.replace('.'+ origin,'' ) , record.type, record.record )  )
 		#z = easyzone.zone_from_file(zonename, filename)
 		#z.save(autoserial=False)
+		return True
 		

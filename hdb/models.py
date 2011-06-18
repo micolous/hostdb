@@ -128,8 +128,6 @@ class DNSRecord(Model):
 		#need to check for records with a _ in them .... 
 	def is_active(self, depth=0):
 		# This should only send back that it is not active if ALL its parents are False.
-		print depth 
-		print ':%s' % self.fqdn
 		if depth > 100:
 			return False
 		parent_active = False
