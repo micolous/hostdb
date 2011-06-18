@@ -102,6 +102,8 @@ class Command(BaseCommand):
 						print 'ERROR: invalid zone %s' % dnsz.zonename
 						print 'This is either a broken zone, or bad path to checkzone'
 						print 'Please check the zone at %s' % filename_tmp
+			dnsz.last_exported = datetime.datetime.now()
+			dnsz.save()
 
 		
 	def exportZone(self, filename, dnsz, nsserver, zonename, write, verbosity):
@@ -113,14 +115,16 @@ class Command(BaseCommand):
 		# TODO: This needs to write to a temp file, check it then if it passes, put it into place.
 		# Check our list of zone entries if anything has been updated since the last writeout .... 
 		for record in dnsz.dnsrecord_set.all():
+			if verbosity > '1':
+					print record
+					print dnsz.last_exported
+					print record.modified
 			if dnsz.last_exported < record.modified:
-				#print 'modified'
-				#print record
+				if verbosity > '1':
+					print 'modified'
 				write = True
 				break
 		# We write this time out just for record keepings sake
-		dnsz.last_exported = datetime.datetime.now()
-		dnsz.save()
 		if write == False:
 			return False
 		# Create or edit the file. Put the SOA details in.
