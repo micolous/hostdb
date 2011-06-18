@@ -126,22 +126,28 @@ class DNSRecord(Model):
 		if self.type != 'A' and self.type != 'AAAA':
 			self.address = None
 		#need to check for records with a _ in them .... 
-	def is_active(self):
+	def is_active(self, depth=0):
 		# This should only send back that it is not active if ALL its parents are False.
+		print depth 
+		print ':%s' % self.fqdn
+		if depth > 100:
+			return False
 		parent_active = False
 		recs = self.dnsrecord.all()
-		#if we have no parents
+		#if we have no parent
+		if self.type == 'A' or self.type == 'AAAA':
+			return self.active
 		if len(recs) == 0:
 			return self.active
 		else:
-			#we have parents ...
-			for rec in recs:
-				if rec.active==True: parent_active = True
-			if not parent_active:
-				#none of our parents are active, so we are false
+			#we have parents ... Check our self first though .... 
+			if self.active == False:
 				return False
-			#At least one of our parents is active, so we return our status
-			return self.active
+			# Now, we want to check our parent, since we ARE active, so only our parent can overide this.
+			for rec in recs:
+				if rec.is_active(depth + 1)==True: 
+					return True
+			return False
 	is_active.boolean = True
 	#NOTE fqdn = full name of record 
 	# NOTE record = data. 
