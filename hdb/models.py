@@ -130,13 +130,18 @@ class DNSRecord(Model):
 		# This should only send back that it is not active if ALL its parents are False.
 		parent_active = False
 		recs = self.dnsrecord.all()
-		for rec in recs:
-			if rec.active==True: parent_active = True
-		if not parent_active and len(recs):
-			#none of our parents are active, so we are false
-			return False
-		#At least one of our parents is active, so we return our status
-		return self.active
+		#if we have no parents
+		if len(recs) == 0:
+			return self.active
+		else:
+			#we have parents ...
+			for rec in recs:
+				if rec.active==True: parent_active = True
+			if not parent_active:
+				#none of our parents are active, so we are false
+				return False
+			#At least one of our parents is active, so we return our status
+			return self.active
 	is_active.boolean = True
 	#NOTE fqdn = full name of record 
 	# NOTE record = data. 
