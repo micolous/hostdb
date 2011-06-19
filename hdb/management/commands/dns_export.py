@@ -47,9 +47,14 @@ class Command(BaseCommand):
 			default=False,
 			help='force writing of zone files even if no updates are needed',),
 		
+		make_option('-n', '--nameserver',
+			dest='nameserver',
+			metavar = 'NAMESERVER',
+			default = None,
+			help='specify the nameserver you wish to export zones for. If not specified, export zones to all nameservers.'),
 		)
 		
-	def handle(self, zonename, dirname, checkzone, verbosity, force_write, *args, **options):
+	def handle(self, zonename, dirname, checkzone, verbosity, force_write, nameserver, *args, **options):
 		if not zonename and not dirname:
 			print "Must supply valid zonename. If you wish to export all zones, provide a dirname"
 			exit(-1)
@@ -80,7 +85,20 @@ class Command(BaseCommand):
 			#dnsz.serial = datetime.datetime.now().strftime("%Y%m%d%H")
 			dnsz.serial += 1
 			dnsz.save()
-			for nsserver in dnsz.dnsrecord_set.filter(type="NS"):
+			if nameserver == None:
+				nsservers = dnsz.dnsrecord_set.filter(type="NS")
+			else:
+				nsservers = []
+				# There is probably a better way to do this .... 
+				nsservers_ = dnsz.dnsrecord_set.filter(type="NS")
+				for nsserver_ in nsservers_:
+					if len(nsserver_.dnsrecord.filter(fqdn=nameserver)) > 0:
+						if verbosity > '0':
+							print len(nsserver_.dnsrecord.filter(fqdn=nameserver))
+							print nsserver_
+						nsservers.append( nsserver_)
+			print nsservers
+			for nsserver in nsservers:
 				filename = "%s%s%szone" %(dirname, nsserver.record, dnsz.zonename )
 				filename_tmp = filename + '.tmp'
 				if verbosity > '1':
@@ -160,7 +178,8 @@ class Command(BaseCommand):
 			lttl = values['ttl']
 			origin = '.'
 			lorigin = '.'
-			for record in dnsz.dnsrecord_set.filter( ~Q(fqdn__exact = zonename) ).order_by('fqdn','type' ) :
+			# For everything NOT with a name of zonename
+			for record in dnsz.dnsrecord_set.filter( ~Q(fqdn__exact = zonename) , ~Q(type__exact = 'DNAME') ).order_by('fqdn','type' ) :
 				if verbosity > '1': print record
 				if record.is_active():
 					#print record.fqdn + ':' + record.record + ':' + record.type
@@ -181,7 +200,30 @@ class Command(BaseCommand):
 						f.write( "%-20s " % (record.fqdn.replace('.' + origin, '') ) )
 						for parent_rec in record.dnsrecord.filter(type=record.type.replace('CNAME', '') ):
 							f.write ("\t%-10s %s\n" % ( parent_rec.type, parent_rec.record) )
+					elif record.type == 'A':
+						if record.address.type == 4:
+							f.write( "%-20s %-10s %s\n" %( record.fqdn.replace('.'+ origin,'' ) , record.type, record.address.address )  )
+						else:
+							print 'Invalid address %s for record type %s' % (record.address, record.type)
+					elif record.type == 'AAAA':
+						if record.address.type == 6:
+							f.write( "%-20s %-10s %s\n" %( record.fqdn.replace('.'+ origin,'' ) , record.type, record.address.address )  )
+						else:
+							print 'Invalid address %s for record type %s' % (record.address, record.type)
 					else:
 						f.write( "%-20s %-10s %s\n" %( record.fqdn.replace('.'+ origin,'' ) , record.type, record.record )  )
+			# We export DNAME's last else it breaks zone files .... Mind you, DNAME's can break enough as is.
+			#WE need to be verbose with DNAME's, so we set our $ORIGIN to ., and work from there.
+			dname_records =  dnsz.dnsrecord_set.filter( Q(type__exact = 'DNAME' ) ).order_by('fqdn' ) 
+			if len(dname_records) > 0:
+				f.write( '$ORIGIN %s\n' % '.' )
+				for record in dname_records:
+					if verbosity > '1':
+						print record
+					if lttl != record.ttl:
+						if record.ttl != None:
+							f.write('$TTL %s\n' % record.ttl)
+							lttl = record.ttl
+					f.write( "%-20s %-10s %s\n" %( record.fqdn , record.type, record.record )  )
 		return True
 		
