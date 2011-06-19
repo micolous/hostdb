@@ -4,7 +4,7 @@
 		$(".form-row.record").hide();
 		$(".form-row.address").hide();
 		$("#id_type").change(function() {
-			if (this.value == "" || this.value = null)
+			if (this.value == "" || this.value == null)
 			{
 				$(".form-row.record").slideUp(speed);
 				$(".form-row.address").slideUp(speed);
