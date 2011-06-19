@@ -113,11 +113,11 @@ class DNSRecord(Model):
 		('SRV', 'SRV')
 
 	)
-	address = ForeignKey(Address, null=True, blank=True)
 	zone = ForeignKey(DNSZone)
+	type = CharField(max_length=9, choices=DNS_TYPE_CHOICES)
 	dnsrecord = ManyToManyField("self", related_name="dnschildren", null=True, blank=True)
 	fqdn = CharField(max_length=255, null=True, blank=True)
-	type = CharField(max_length=9, choices=DNS_TYPE_CHOICES)
+	address = ForeignKey(Address, null=True, blank=True)
 	record = TextField(max_length=1024, null=True, blank=True) #This shouldn't be edited? should it be generated?
 	ttl = IntegerField(blank=True, null=True)
 	active = BooleanField(default = False)

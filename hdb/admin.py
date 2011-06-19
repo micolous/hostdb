@@ -1,12 +1,11 @@
 from django.contrib import admin
-
+from django.conf import settings
 from models import *
 
 class DNSZoneAdmin(admin.ModelAdmin):
 	search_fields = ['zonename']
 
 admin.site.register(DNSZone, DNSZoneAdmin)
-
 
 class DHCPScopeAdmin(admin.ModelAdmin):
 	search_fields = ['zonename']
@@ -37,7 +36,9 @@ class DNSRecordAdmin(admin.ModelAdmin):
 	list_display = ['fqdn', 'type', 'record', 'address','active', 'is_active','zone']
 	list_filter = [ 'type', 'zone__zonename' ]
 	filter_horizontal = [ 'dnsrecord' ]
-	list_editable = ['active'] 
+	list_editable = ['active']
+	class Media:
+		js = ('js/DNSRecordAdmin.js',)
 
 admin.site.register(DNSRecord, DNSRecordAdmin)
 

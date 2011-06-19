@@ -46,14 +46,14 @@ MEDIA_ROOT = ''
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash if there is a path component (optional in other cases).
 # Examples: "http://media.lawrence.com", "http://example.com/media/"
-MEDIA_URL = 'media/'
+MEDIA_URL = '/media/'
 
 STATIC_ROOT = ''
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 # URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
 # trailing slash.
 # Examples: "http://foo.com/media/", "/media/".
-ADMIN_MEDIA_PREFIX = '/admin-media/'
+ADMIN_MEDIA_PREFIX = '/static/admin/'
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = '@_eq1%k*!et2^#%^o$^eudk4k13i7nkzn0d-4frt2g9w&u#i_w'
@@ -88,6 +88,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.messages',
+    'django.contrib.staticfiles',
     # Uncomment the next line to enable the admin:
     'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
@@ -96,5 +97,7 @@ INSTALLED_APPS = (
     'hdb',
     #'shell',
 )
-
-from settings_local import *
+try:
+    from settings_local import *
+except:
+    print "Unable to load settings_local"
