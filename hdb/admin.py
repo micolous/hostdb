@@ -20,10 +20,10 @@ class HostAdmin(admin.ModelAdmin):
 admin.site.register(Host, HostAdmin)
 
 class AddressAdmin(admin.ModelAdmin):
-	list_display = ['type', 'host', 'address', 'vlan', 'hwid']
+	list_display = ['type', 'host', 'address', 'active', 'vlan', 'hwid']
 	list_filter = ['type', 'vlan']
 	search_fields = ['host__hostname', 'address', 'hwid']
-	list_editable = ['address', 'vlan']
+	list_editable = ['active' ]
 
 admin.site.register(Address, AddressAdmin)
 

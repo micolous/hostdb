@@ -73,6 +73,7 @@ class Address(Model):
 	vlan = IntegerField()
 	hwid = CharField(max_length=17, null=True)
 	address = CharField(max_length=39, unique=True)
+	active = BooleanField(default = True)
 	#validate wether it is ipv4 or ipv6
 	def __unicode__(self):
 		return self.address 
@@ -106,6 +107,7 @@ class DNSRecord(Model):
 		('CNAME', 'CNAME'),
 		('ACNAME', 'ACNAME'),
 		('AAAACNAME', 'AAAACNAME'),
+		('DNAME', 'DNAME'),
 		('MX', 'MX'),
 		('TXT', 'TXT'),
 		('HINFO', 'HINFO'),
@@ -121,12 +123,30 @@ class DNSRecord(Model):
 	record = TextField(max_length=1024, null=True, blank=True) #This shouldn't be edited? should it be generated?
 	ttl = IntegerField(blank=True, null=True)
 	active = BooleanField(default = False)
-	modified = DateTimeField(auto_now=True, auto_now_add=True)
+	modified = DateTimeField(auto_now=True, auto_now_add=True, editable=False)
+	#class Admin:
+	#	hide_unless = {
+	#			'record': {'record' : 'CNAME'}
+	#			}
 	def __unicode__(self):
+		if self.type in ('A', 'AAAA', 'PTR') :
+			return u'%s : %s : %s' % (self.fqdn , self.type , self.address)
+		if self.type in ('CNAME', 'ACNAME', 'AAAACNAME'):
+			return u'%s : %s : %s' % (self.fqdn , self.type , self.dnsrecord)
 		return u'%s : %s : %s' % (self.fqdn , self.type , self.record)
 	def clean(self):
-		if self.type != 'A' and self.type != 'AAAA':
+		if self.type not in ('A', 'AAAA', 'PTR'):
 			self.address = None
+		if self.type in ('A', 'AAAA', 'CNAME', 'NS', 'PTR', 'ACNAME', 'AAAACNAME'):
+			#A records need to record data, since they are Address pointers
+			# TODO Should I self generate record entries based on internal information to simplify the export?
+			self.record = None
+		if self.type == 'A':
+			if self.address.type != 4:
+				raise ValidationError('IPv6 Address provided for A record')
+		if self.type == 'AAAA':
+			if self.address.type != 6:
+				raise ValidationError('IPv4 Address provided for AAAA record')
 		#need to check for records with a _ in them .... 
 	def is_active(self, depth=0):
 		# This should only send back that it is not active if ALL its parents are False.
@@ -134,9 +154,14 @@ class DNSRecord(Model):
 			return False
 		parent_active = False
 		recs = self.dnsrecord.all()
-		#if we have no parent
-		if self.type == 'A' or self.type == 'AAAA':
-			return self.active
+		if depth > 50:
+			#We have recursed to far, should I throw an exception?
+			return False
+		if self.type in ('A', 'AAAA'):
+			if self.address.active:
+				return self.active
+			else:
+				return False
 		if len(recs) == 0:
 			return self.active
 		else:

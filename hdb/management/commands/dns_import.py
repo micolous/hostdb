@@ -86,7 +86,8 @@ class Command(BaseCommand):
 							dr.type = rtype
 							if rtype == 'MX':
 								rec = '%s %s' % rec
-							dr.record = rec
+							if rtype not in ('A', 'AAAA'):
+								dr.record = rec
 							dr.active= True
 							dr.ttl = dnsz.ttl
 							dr.fqdn = r
@@ -106,6 +107,7 @@ class Command(BaseCommand):
 								dr.address = a
 							dr.save()
 							print dr
+							# TODO We should check if a DNAME to relate to a different zone .... ?
 							if rtype in ('MX', 'CNAME', 'NS', 'PTR', 'TXT', 'SRV'):
 								test = rec.split(' ')[-1]
 								#We should also split the rec if possible - last field is our related name in SRV / MX
