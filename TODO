@@ -1,0 +1,17 @@
+DNS
+
+- Add model checks for CNAMES' and other related records that we have a unique parent name (IE CNAME has parents x.foo and x.foo (with different AAAA recs) and to prevent CNAME has parents x.foo and y.foo
+- Make zone's export named.conf files that can be included. 
+- Make the ADDRESS type validate IP , HWID and MAC information correctly
+- Make Import work with DNAME's
+
+DHCP
+
+- Import DHCP configs
+- Admin interface to modify DHCP 
+- Export DHCP configs
+- Support DHCP6
+
+GLOBAL
+
+- Make update script that reloads RNDC and DHCP, exports zones etc etc.
