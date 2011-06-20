@@ -97,7 +97,6 @@ class Command(BaseCommand):
 							print len(nsserver_.dnsrecord.filter(fqdn=nameserver))
 							print nsserver_
 						nsservers.append( nsserver_)
-			print nsservers
 			for nsserver in nsservers:
 				filename = "%s%s%szone" %(dirname, nsserver.record, dnsz.zonename )
 				filename_tmp = filename + '.tmp'
@@ -210,6 +209,9 @@ class Command(BaseCommand):
 							f.write( "%-20s %-10s %s\n" %( record.fqdn.replace('.'+ origin,'' ) , record.type, record.address.address )  )
 						else:
 							print 'Invalid address %s for record type %s' % (record.address, record.type)
+					elif record.type == 'CNAME':
+						# We want to print our parent records fqdn 
+						f.write( "%-20s %-10s %s\n" %( record.fqdn.replace('.'+ origin,'' ) , record.type, record.dnsrecord.get().fqdn )  )
 					else:
 						f.write( "%-20s %-10s %s\n" %( record.fqdn.replace('.'+ origin,'' ) , record.type, record.record )  )
 			# We export DNAME's last else it breaks zone files .... Mind you, DNAME's can break enough as is.
