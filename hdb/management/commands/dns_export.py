@@ -211,7 +211,7 @@ class Command(BaseCommand):
 							print 'Invalid address %s for record type %s' % (record.address, record.type)
 					elif record.type == 'CNAME':
 						# We want to print our parent records fqdn 
-						f.write( "%-20s %-10s %s\n" %( record.fqdn.replace('.'+ origin,'' ) , record.type, record.dnsrecord.get().fqdn )  )
+						f.write( "%-20s %-10s %s\n" %( record.fqdn.replace('.'+ origin,'' ) , record.type, record.dnsrecord.all()[0].fqdn )  )
 					else:
 						f.write( "%-20s %-10s %s\n" %( record.fqdn.replace('.'+ origin,'' ) , record.type, record.record )  )
 			# We export DNAME's last else it breaks zone files .... Mind you, DNAME's can break enough as is.
