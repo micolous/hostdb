@@ -173,6 +173,11 @@ class Command(BaseCommand):
 			for arecord in dnsz.dnsrecord_set.filter( fqdn=zonename, type__in=( 'A', 'AAAA' )):
 				if arecord.is_active():
 					f.write('	%s %s \n' % (arecord.type, arecord.address) )
+			query1 = dnsz.dnsrecord_set.filter( fqdn=zonename)
+			query2 = query1.exclude( type__in=('A', 'AAAA', 'NS'))
+			for arecord in query2:
+				if arecord.is_active():
+					f.write('	%s %s \n' % (arecord.type, arecord.record) )
 			#Now we write the origin and TTL out ... 
 			lttl = values['ttl']
 			origin = '.'
