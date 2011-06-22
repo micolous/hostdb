@@ -175,6 +175,7 @@ class Command(BaseCommand):
 					f.write('	%s %s \n' % (arecord.type, arecord.address) )
 			query1 = dnsz.dnsrecord_set.filter( fqdn=zonename)
 			query2 = query1.exclude( type__in=('A', 'AAAA', 'NS'))
+			#print query2
 			for arecord in query2:
 				if arecord.is_active():
 					f.write('	%s %s \n' % (arecord.type, arecord.record) )
@@ -183,7 +184,7 @@ class Command(BaseCommand):
 			origin = '.'
 			lorigin = '.'
 			# For everything NOT with a name of zonename
-			for record in dnsz.dnsrecord_set.filter( ~Q(fqdn__exact = zonename) , ~Q(type__exact = 'DNAME') ).order_by('fqdn','type' ) :
+			for record in dnsz.dnsrecord_set.filter( ~Q(fqdn__exact = zonename) , ~Q(type__exact = 'DNAME'), ~Q(type__exact = 'MX') ).order_by('fqdn','type' ) :
 				if verbosity > '1': print record
 				if record.is_active():
 					#print record.fqdn + ':' + record.record + ':' + record.type
@@ -215,8 +216,11 @@ class Command(BaseCommand):
 						else:
 							print 'Invalid address %s for record type %s' % (record.address, record.type)
 					elif record.type == 'CNAME':
-						# We want to print our parent records fqdn 
-						f.write( "%-20s %-10s %s\n" %( record.fqdn.replace('.'+ origin,'' ) , record.type, record.dnsrecord.all()[0].fqdn )  )
+						# We want to print our parent records fqdn
+						try:
+							f.write( "%-20s %-10s %s\n" %( record.fqdn.replace('.'+ origin,'' ) , record.type, record.dnsrecord.all()[0].fqdn )  )
+						except e:
+							print e
 					else:
 						f.write( "%-20s %-10s %s\n" %( record.fqdn.replace('.'+ origin,'' ) , record.type, record.record )  )
 			# We export DNAME's last else it breaks zone files .... Mind you, DNAME's can break enough as is.
