@@ -219,8 +219,8 @@ class Command(BaseCommand):
 						# We want to print our parent records fqdn
 						try:
 							f.write( "%-20s %-10s %s\n" %( record.fqdn.replace('.'+ origin,'' ) , record.type, record.dnsrecord.all()[0].fqdn )  )
-						except as e:
-							print e
+						except IndexError as e:
+							print "This is likely as you have not defined a relationship for your CNAME correctly"
 							print record
 					else:
 						f.write( "%-20s %-10s %s\n" %( record.fqdn.replace('.'+ origin,'' ) , record.type, record.record )  )
