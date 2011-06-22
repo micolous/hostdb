@@ -219,8 +219,9 @@ class Command(BaseCommand):
 						# We want to print our parent records fqdn
 						try:
 							f.write( "%-20s %-10s %s\n" %( record.fqdn.replace('.'+ origin,'' ) , record.type, record.dnsrecord.all()[0].fqdn )  )
-						except e:
+						except as e:
 							print e
+							print record
 					else:
 						f.write( "%-20s %-10s %s\n" %( record.fqdn.replace('.'+ origin,'' ) , record.type, record.record )  )
 			# We export DNAME's last else it breaks zone files .... Mind you, DNAME's can break enough as is.
