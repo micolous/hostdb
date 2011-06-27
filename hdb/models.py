@@ -70,8 +70,8 @@ class Address(Model):
 	IP_TYPE_CHOICES = (	(IPv4, 'IPv4'), (IPv6, 'IPv6'), )
 	host = ForeignKey(Host, null=True, blank=True)
 	type = IntegerField(choices=IP_TYPE_CHOICES)
-	vlan = IntegerField()
-	hwid = CharField(max_length=17, null=True)
+	vlan = IntegerField(default=0)
+	hwid = CharField(max_length=17, null=True, blank=True)
 	address = CharField(max_length=39, unique=True)
 	active = BooleanField(default = True)
 	#validate wether it is ipv4 or ipv6
